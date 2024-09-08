@@ -26,6 +26,11 @@ def upload_file():
         return "No file part"
     
     file = request.files['file']
+    prompt_by_user = request.form['description']
+    if(len(prompt_by_user) != 0):
+        additional_prompt = "Take care of these conditions specially: "+ prompt_by_user
+    else:
+        additional_prompt = ""
 
     if file.filename == '':
         return "No selected file"
@@ -36,9 +41,8 @@ def upload_file():
             file.save(filename)
             model = genai.GenerativeModel("gemini-1.5-flash")
             promptin = (
-                "I am providing you with a screenshot of an application. Based on this, generate a well-structured "
-                "and comprehensive testing guide that details how to test each functionality of the app. Each test case "
-                "should be clear and easy to follow, ensuring it's formatted neatly for web presentation. For each functionality, "
+                "Based ont the screenshot provided, generate a well-structured "
+                "and comprehensive testing guide that details how to test each functionality of the app.For each functionality, "
                 "provide:\n\n"
                 "- **Description:** A concise overview of what the test case is intended to verify.\n"
                 "- **Pre-conditions:** A list of any prerequisites or conditions that must be met before performing the test "
@@ -46,7 +50,8 @@ def upload_file():
                 "- **Testing Steps:** A numbered, step-by-step set of instructions outlining how to conduct the test.\n"
                 "- **Expected Result:** A description of what should happen if the feature or functionality behaves as expected.\n\n"
                 "Ensure that the output is well-formatted, making it easy to read and visually appealing when displayed on a webpage, "
-                "with clear headings and organized sections. Use bullet points, numbered lists, and bold text to highlight important information. Use HTML tags that are used inside BODY tags for formatting and do not use any markdown syntax. "
+                "with clear headings and organized sections. Use bullet points, numbered lists, and bold text to highlight important information."+additional_prompt
+                
             )
             ss = PIL.Image.open("uploads/uploaded_image.jpg")
             response = model.generate_content([promptin,ss])
