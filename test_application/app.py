@@ -26,11 +26,11 @@ def upload_file():
         return "No file part"
     
     file = request.files['file']
-    file2 = request.files['file2']
-    file3 = request.files['file3']
+    file2 = request.files.get('file2')  # Use get() to avoid KeyError
+    file3 = request.files.get('file3')  # Use get() to avoid KeyError
     prompt_by_user = request.form['description']
-    if(len(prompt_by_user) != 0):
-        additional_prompt = "Take care of these conditions specially: "+ prompt_by_user
+    if len(prompt_by_user) != 0:
+        additional_prompt = "Take care of these conditions specially: " + prompt_by_user
     else:
         additional_prompt = ""
 
@@ -39,12 +39,9 @@ def upload_file():
 
     if file and allowed_file(file.filename):
         filename = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_image.jpg')
-        filename2 = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_image2.jpg')
-        filename3 = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_image3.jpg')
         try:
             file.save(filename)
-            file2.save(filename2)
-            file3.save(filename3)
+            
             model = genai.GenerativeModel("gemini-1.5-flash")
             promptin = (
                 "Based on the screenshot provided understand the userflow and then generate a well-structured "
@@ -56,24 +53,40 @@ def upload_file():
                 "- **Testing Steps:** A numbered, step-by-step set of instructions outlining how to conduct the test.\n"
                 "- **Expected Result:** A description of what should happen if the feature or functionality behaves as expected.\n\n"
                 "Ensure that the output is well-formatted, making it easy to read and visually appealing when displayed on a webpage, "
-                "with clear headings and organized sections. Use bullet points, numbered lists, and bold text to highlight important information. Only use the most important section of the screenshot"+additional_prompt
-                
+                "with clear headings and organized sections. Use bullet points, numbered lists, and bold text to highlight important information. Only use the most important section of the screenshot"
+                + additional_prompt
             )
+            
+            # Create a list to hold the prompt and available screenshots
+            prompt_to_model = [promptin]
+
+            # Add file1 to the list
             ss = PIL.Image.open("uploads/uploaded_image.jpg")
-            ss2 = PIL.Image.open("uploads/uploaded_image2.jpg")
-            ss3 = PIL.Image.open("uploads/uploaded_image3.jpg")
-            prompt_to_model =[]
-            prompt_to_model.append(promptin)
             prompt_to_model.append(ss)
-            prompt_to_model.append(ss2)
-            prompt_to_model.append(ss3)
+            
+            # Save and add file2 if present and valid
+            if file2 and allowed_file(file2.filename):
+                filename2 = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_image2.jpg')
+                file2.save(filename2)
+                ss2 = PIL.Image.open("uploads/uploaded_image2.jpg")
+                prompt_to_model.append(ss2)
+
+            # Save and add file3 if present and valid
+            if file3 and allowed_file(file3.filename):
+                filename3 = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_image3.jpg')
+                file3.save(filename3)
+                ss3 = PIL.Image.open("uploads/uploaded_image3.jpg")
+                prompt_to_model.append(ss3)
+
             response = model.generate_content(prompt_to_model)
             html_content = markdown.markdown(response.text)
             return render_template('result.html', result=html_content)
         except Exception as e:
             print(f"Error occurred: {str(e)}")
             return "An error occurred while processing the image or API call"
+    
     return "File upload failed"
+
 if __name__ == '__main__':
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
