@@ -26,8 +26,8 @@ def upload_file():
         return "No file part"
     
     file = request.files['file']
-    file2 = request.files.get('file2')  # Use get() to avoid KeyError
-    file3 = request.files.get('file3')  # Use get() to avoid KeyError
+    file2 = request.files.get('file2')  
+    file3 = request.files.get('file3')      
     prompt_by_user = request.form['description']
     if len(prompt_by_user) != 0:
         additional_prompt = "Take care of these conditions specially: " + prompt_by_user
@@ -56,22 +56,16 @@ def upload_file():
                 "with clear headings and organized sections. Use bullet points, numbered lists, and bold text to highlight important information. Only use the most important section of the screenshot"
                 + additional_prompt
             )
-            
-            # Create a list to hold the prompt and available screenshots
             prompt_to_model = [promptin]
-
-            # Add file1 to the list
             ss = PIL.Image.open("uploads/uploaded_image.jpg")
             prompt_to_model.append(ss)
             
-            # Save and add file2 if present and valid
             if file2 and allowed_file(file2.filename):
                 filename2 = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_image2.jpg')
                 file2.save(filename2)
                 ss2 = PIL.Image.open("uploads/uploaded_image2.jpg")
                 prompt_to_model.append(ss2)
 
-            # Save and add file3 if present and valid
             if file3 and allowed_file(file3.filename):
                 filename3 = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_image3.jpg')
                 file3.save(filename3)
