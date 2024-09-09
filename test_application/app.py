@@ -26,6 +26,8 @@ def upload_file():
         return "No file part"
     
     file = request.files['file']
+    file2 = request.files['file2']
+    file3 = request.files['file3']
     prompt_by_user = request.form['description']
     if(len(prompt_by_user) != 0):
         additional_prompt = "Take care of these conditions specially: "+ prompt_by_user
@@ -37,11 +39,15 @@ def upload_file():
 
     if file and allowed_file(file.filename):
         filename = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_image.jpg')
+        filename2 = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_image2.jpg')
+        filename3 = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_image3.jpg')
         try:
             file.save(filename)
+            file2.save(filename2)
+            file3.save(filename3)
             model = genai.GenerativeModel("gemini-1.5-flash")
             promptin = (
-                "Based on the screenshot provided, generate a well-structured "
+                "Based on the screenshot provided understand the userflow and then generate a well-structured "
                 "and comprehensive testing guide that details how to test each functionality of the app. For each functionality, "
                 "provide:\n\n"
                 "- **Description:** A concise overview of what the test case is intended to verify.\n"
@@ -54,7 +60,14 @@ def upload_file():
                 
             )
             ss = PIL.Image.open("uploads/uploaded_image.jpg")
-            response = model.generate_content([promptin,ss])
+            ss2 = PIL.Image.open("uploads/uploaded_image2.jpg")
+            ss3 = PIL.Image.open("uploads/uploaded_image3.jpg")
+            prompt_to_model =[]
+            prompt_to_model.append(promptin)
+            prompt_to_model.append(ss)
+            prompt_to_model.append(ss2)
+            prompt_to_model.append(ss3)
+            response = model.generate_content(prompt_to_model)
             html_content = markdown.markdown(response.text)
             return render_template('result.html', result=html_content)
         except Exception as e:
